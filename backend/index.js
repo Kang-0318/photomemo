@@ -1,3 +1,6 @@
+import reviewRoutes from "./routes/reviewRoutes.js";
+app.use("/api/reviews", reviewRoutes);
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");

@@ -111,7 +111,7 @@ function App() {
           path="/admin/dashboard"
           element={
             token && user?.role === 'admin' ? (
-              <AdminDashboard token={token} />
+              <AdminDashboard token={token} onLogout={handleLogout} />
             ) : (
               <Navigate to="/admin/login" replace />
             )

@@ -1,39 +1,40 @@
-import React, { useState } from "react";
-import { getErrorMessage, login, register } from "../api/client";
+import { useEffect, useState } from "react";
+import { login, register } from "../api/client";
+import "./style/AuthModal.scss";
 
 function AuthModal({ open, onClose, onAuthed, defaultMode = "login" }) {
   const [mode, setMode] = useState(defaultMode);
-
-  useEffect(() => {
-    setMode(defaultMode);
-  }, [defaultMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [error, setError] = useState(null);
+
+  // ✅ 쿼리에 따라 모드 자동 변경
+  useEffect(() => {
+    setMode(defaultMode);
+  }, [defaultMode]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-
     try {
-      if (mode === "login") {
-        const data = await login({ email, password });
-        onAuthed(data); // ✅ 로그인일 때만 로그인 성공 처리
+      if (mode === "register") {
+        const data = await register({ email, password, displayname: displayName });
+        alert("회원가입 완료! 로그인 해주세요.");
+        setMode("login");
       } else {
-        // ✅ 회원가입 후엔 자동 로그인시키지 말기
-        await register({ email, password, displayName });
-        alert("회원가입이 완료되었습니다! 로그인 후 이용해주세요.");
-        setMode("login"); // 회원가입 → 로그인 탭으로 전환
+        const data = await login({ email, password });
+        onAuthed(data);
+        onClose();
       }
-    } catch (err) {
-      setError(getErrorMessage(err));
+    } catch (error) {
+      alert("오류: " + (error.response?.data?.message || error.message));
     }
   };
 
+  if (!open) return null;
+
   return (
-    <div className={`auth-modal ${open ? "open" : ""}`}>
-      <div className="auth-box">
+    <div className="auth-modal">
+      <div className="modal-content">
         <h2>{mode === "login" ? "로그인" : "회원가입"}</h2>
 
         <form onSubmit={handleSubmit}>
@@ -43,6 +44,7 @@ function AuthModal({ open, onClose, onAuthed, defaultMode = "login" }) {
               placeholder="닉네임"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
+              required
             />
           )}
           <input
@@ -50,35 +52,36 @@ function AuthModal({ open, onClose, onAuthed, defaultMode = "login" }) {
             placeholder="이메일"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
           <input
             type="password"
             placeholder="비밀번호"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
-
-          {error && <p className="error">{error}</p>}
 
           <button type="submit" className="btn-primary">
             {mode === "login" ? "로그인" : "회원가입"}
           </button>
         </form>
 
-        <p>
-          {mode === "login"
-            ? "계정이 없으신가요?"
-            : "이미 계정이 있으신가요?"}
-          <button
-            type="button"
-            className="link-btn"
-            onClick={() => setMode(mode === "login" ? "register" : "login")}
-          >
-            {mode === "login" ? "회원가입" : "로그인"}
-          </button>
+        <p className="switch-mode">
+          {mode === "login" ? (
+            <>
+              계정이 없나요?{" "}
+              <button onClick={() => setMode("register")}>회원가입</button>
+            </>
+          ) : (
+            <>
+              이미 계정이 있나요?{" "}
+              <button onClick={() => setMode("login")}>로그인</button>
+            </>
+          )}
         </p>
 
-        <button className="close-btn" onClick={onClose}>
+        <button className="btn-close" onClick={onClose}>
           닫기
         </button>
       </div>

@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
-import './style/AuthPanel.scss'
-import AuthModal from "./AuthModal"
+import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom"; // ✅ useNavigate 추가
+import AuthModal from "./AuthModal";
+import './style/AuthPanel.scss';
 
 const AuthPanel = ({
   isAuthed,
@@ -12,30 +13,37 @@ const AuthPanel = ({
   requiredRole
 }) => {
 
-  const [open, setOpen] = useState(false)
-  const hasRequiredRole = !requiredRole || (user && user.role == requiredRole)
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate(); // ✅ navigate 함수 추가
+  const hasRequiredRole = !requiredRole || (user && user.role === requiredRole);
 
-
+  // 로그인 후 자동으로 페이지 이동
+  const handleLoginSuccess = ({ user, token }) => {
+    onAuthed({ user, token });
+    if (user.role === "admin") {
+      navigate("/admin/dashboard"); // 관리자일 경우 관리자 대시보드로 이동
+    } else {
+      navigate("/reviews"); // 일반 유저는 리뷰 작성 페이지로 이동
+    }
+  };
 
   if (open) {
     return (
       <AuthModal
         open={open}
         onClose={() => setOpen(false)}
-        onAuthed={onAuthed}
+        onAuthed={handleLoginSuccess} // ✅ 로그인 성공 시 호출
       />
-    )
+    );
   }
-
 
   return (
     <section className='container-sm admin-card'>
       <header className='admin-head'>
         <h1 className='title'>관리자 인증</h1>
-        <p>
-          버튼 → 모달에서 로그인/회원가입 → 토큰 저장 → /me 호출
-        </p>
+        <p>버튼 → 모달에서 로그인/회원가입 → 토큰 저장 → /me 호출</p>
       </header>
+
       {!isAuthed ? (
         <div className="auth-row">
           {/* 로그인 전 */}
@@ -44,19 +52,17 @@ const AuthPanel = ({
             className="btn btn-primary">
             로그인 / 회원가입
           </button>
-
         </div>
       ) : (
         <div className="auth-row">
           {/* 로그인 후 */}
-          <span>안녕하세요 <b>{user?.displayName || user?.email}</b> </span>
+          <span>안녕하세요 <b>{user?.displayName || user?.email}</b></span>
           <span
             className={`badge ${hasRequiredRole ? 'badge-ok' : 'badge-warn'} `}>
             {hasRequiredRole ? 'admin' : `권한없음 : ${requiredRole} 필요`}
           </span>
 
           <div className="auth-actions">
-
             {hasRequiredRole && (
               <button className="btn" onClick={onFetchMe}>/me 호출</button>
             )}
@@ -64,8 +70,6 @@ const AuthPanel = ({
           </div>
         </div>
       )}
-
-
 
       {/* 권한 없음 경고 */}
       {!hasRequiredRole && (
@@ -80,9 +84,8 @@ const AuthPanel = ({
           {JSON.stringify(me, null, 2)}
         </pre>
       )}
-
     </section>
-  )
+  );
 }
 
-export default AuthPanel
+export default AuthPanel;

@@ -3,12 +3,11 @@ import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import './App.scss';
 import api from './api/client';
 import AuthPanel from './components/AuthPanel';
-import Header from './components/Header';
 import ProtectRoute from './components/ProtectRoute';
 import Landing from './pages/Landing';
+import LoginSelect from './pages/LoginSelect'; // ✅ 추가
 import ReviewPage from './pages/ReviewPage';
 import AdminDashboard from './pages/admin/adminDashboard';
-import UserDashboard from './pages/user/UserDashboard';
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -27,7 +26,6 @@ function App() {
     localStorage.setItem('user', JSON.stringify(user));
     localStorage.setItem('token', token);
 
-    // ✅ 로그인 성공 시 역할별 페이지로 자동 이동
     if (user.role === 'admin') {
       navigate('/admin/dashboard');
     } else {
@@ -41,7 +39,7 @@ function App() {
     setMe(null);
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    navigate('/'); // 로그아웃 후 홈으로
+    navigate('/');
   };
 
   const fetchMe = async () => {
@@ -59,26 +57,14 @@ function App() {
 
   return (
     <div className="page">
-      <Header user={user} onLogout={handleLogout} />
-
       <Routes>
-        {/* 메인 랜딩 페이지 */}
-        <Route
-          path="/"
-          element={
-            isAuthed ? (
-              user?.role === 'admin' ? (
-                <Navigate to="/admin/dashboard" replace />
-              ) : (
-                <Navigate to="/reviews" replace />
-              )
-            ) : (
-              <Landing />
-            )
-          }
-        />
+        {/* 메인 랜딩 */}
+        <Route path="/" element={<Landing />} />
 
-        {/* 일반 로그인 (유저용) */}
+        {/* ✅ 로그인 선택 페이지 추가 */}
+        <Route path="/login-select" element={<LoginSelect />} />
+
+        {/* 사용자 로그인 */}
         <Route
           path="/login"
           element={
@@ -91,28 +77,6 @@ function App() {
               onAuthed={handleAuthed}
               requiredRole="user"
             />
-          }
-        />
-
-        {/* 리뷰 작성 페이지 (유저만) */}
-        <Route
-          path="/reviews"
-          element={
-            <ProtectRoute isAuthed={isAuthed}>
-              <ReviewPage user={user} token={token} />
-            </ProtectRoute>
-          }
-        />
-
-        {/* 유저 대시보드 */}
-        <Route
-          path="/dashboard"
-          element={
-            token ? (
-              <UserDashboard user={user} token={token} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
           }
         />
 
@@ -132,6 +96,16 @@ function App() {
           }
         />
 
+        {/* 리뷰 */}
+        <Route
+          path="/reviews"
+          element={
+            <ProtectRoute isAuthed={isAuthed}>
+              <ReviewPage user={user} token={token} />
+            </ProtectRoute>
+          }
+        />
+
         {/* 관리자 대시보드 */}
         <Route
           path="/admin/dashboard"
@@ -144,7 +118,7 @@ function App() {
           }
         />
 
-        {/* 잘못된 경로 → 홈으로 리다이렉트 */}
+        {/* 잘못된 경로 → 홈 */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

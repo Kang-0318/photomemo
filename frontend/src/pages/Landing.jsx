@@ -7,7 +7,9 @@ function Landing() {
     <div className="landing-page">
       <h1>🎮 게임 리뷰 허브</h1>
       <p>게임을 기록하고, 평점을 남기고, 다른 사람과 공유하세요.</p>
-      <button className="btn-start" onClick={() => navigate("/login")}>
+
+      {/* ✅ 경로 변경 */}
+      <button className="btn-start" onClick={() => navigate("/login-select")}>
         시작하기
       </button>
 

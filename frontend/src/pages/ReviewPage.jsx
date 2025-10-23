@@ -1,48 +1,101 @@
-import axios from "axios";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import api from "../api/client";
+import "./style/ReviewPage.scss";
 
-export default function ReviewPage() {
+function ReviewPage({ user, token }) {
   const [reviews, setReviews] = useState([]);
-  const [form, setForm] = useState({
-    title: "",
-    genre: "",
-    rating: "",
-    content: "",
-  });
+  const [title, setTitle] = useState("");
+  const [rating, setRating] = useState(5);
+  const [content, setContent] = useState("");
+
+  // ✅ 리뷰 목록 불러오기
+  const fetchReviews = async () => {
+    try {
+      const { data } = await api.get("/api/reviews");
+      setReviews(data.reverse());
+    } catch (error) {
+      console.error("리뷰 가져오기 실패:", error);
+    }
+  };
+
+  // ✅ 리뷰 작성
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title || !content) {
+      alert("모든 항목을 입력해주세요.");
+      return;
+    }
+
+    try {
+      await api.post("/api/reviews", { title, rating, content });
+      setTitle("");
+      setRating(5);
+      setContent("");
+      fetchReviews();
+    } catch (error) {
+      console.error("리뷰 등록 실패:", error);
+      alert("리뷰 등록 실패");
+    }
+  };
 
   useEffect(() => {
-    axios.get("/api/reviews").then(res => setReviews(res.data));
+    fetchReviews();
   }, []);
-
-  const handleSubmit = async e => {
-    e.preventDefault();
-    await axios.post("/api/reviews", form);
-    const { data } = await axios.get("/api/reviews");
-    setReviews(data);
-  };
 
   return (
     <div className="review-page">
-      <h1>🎮 게임 리뷰 작성</h1>
-      <form onSubmit={handleSubmit}>
-        <input placeholder="게임 제목" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} />
-        <input placeholder="장르" value={form.genre} onChange={e => setForm({ ...form, genre: e.target.value })} />
-        <input type="number" placeholder="평점 (0~10)" value={form.rating} onChange={e => setForm({ ...form, rating: e.target.value })} />
-        <textarea placeholder="리뷰 내용" value={form.content} onChange={e => setForm({ ...form, content: e.target.value })}></textarea>
-        <button type="submit">업로드</button>
+      <h1>🎮 게임 리뷰 허브</h1>
+      <p>게임 리뷰를 작성하고 공유해보세요!</p>
+
+      {/* 리뷰 작성 영역 */}
+      <form className="review-form" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="게임 제목"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+
+        <select
+          value={rating}
+          onChange={(e) => setRating(parseInt(e.target.value))}
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+            <option key={n} value={n}>
+              ⭐ {n}
+            </option>
+          ))}
+        </select>
+
+        <textarea
+          placeholder="리뷰 내용을 입력해주세요."
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+        />
+
+        <button type="submit">등록하기</button>
       </form>
 
-      <h2>📜 등록된 리뷰</h2>
-      <ul>
-        {reviews.map(r => (
-          <li key={r._id}>
-            <h3>{r.title} ({r.rating}/10)</h3>
-            <p>{r.genre}</p>
-            <p>{r.content}</p>
-            <small>by {r.user?.username || "익명"}</small>
-          </li>
-        ))}
-      </ul>
+      {/* 리뷰 목록 */}
+      <div className="review-list">
+        <h2>📋 등록된 리뷰</h2>
+        {reviews.length === 0 ? (
+          <p>아직 등록된 리뷰가 없습니다.</p>
+        ) : (
+          reviews.map((r) => (
+            <div key={r._id} className="review-card">
+              <h3>{r.title}</h3>
+              <p>⭐ {r.rating}</p>
+              <p>{r.content}</p>
+              <p className="author">
+                작성자: {r.user?.displayName || r.user?.email || "익명"}
+              </p>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
+
+export default ReviewPage;

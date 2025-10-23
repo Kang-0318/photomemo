@@ -1,8 +1,12 @@
 import React, { useState } from "react";
 import { getErrorMessage, login, register } from "../api/client";
 
-function AuthModal({ open, onClose, onAuthed }) {
-  const [mode, setMode] = useState("login"); // login | register
+function AuthModal({ open, onClose, onAuthed, defaultMode = "login" }) {
+  const [mode, setMode] = useState(defaultMode);
+
+  useEffect(() => {
+    setMode(defaultMode);
+  }, [defaultMode]);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");

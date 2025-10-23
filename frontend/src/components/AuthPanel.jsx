@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate } from "react-router-dom"; // ✅ useNavigate 추가
-import AuthModal from "./AuthModal";
-import './style/AuthPanel.scss';
+import React, { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'; // ✅ 추가
+import AuthModal from "./AuthModal"
+import './style/AuthPanel.scss'
 
 const AuthPanel = ({
   isAuthed,
@@ -12,56 +12,50 @@ const AuthPanel = ({
   onAuthed,
   requiredRole
 }) => {
+  const [open, setOpen] = useState(false)
+  const hasRequiredRole = !requiredRole || (user && user.role === requiredRole)
 
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate(); // ✅ navigate 함수 추가
-  const hasRequiredRole = !requiredRole || (user && user.role === requiredRole);
+  const location = useLocation() // ✅ 쿼리 읽기용
+  const query = new URLSearchParams(location.search)
+  const mode = query.get("mode") // ✅ 'register' 감지
 
-  // 로그인 후 자동으로 페이지 이동
-  const handleLoginSuccess = ({ user, token }) => {
-    onAuthed({ user, token });
-    if (user.role === "admin") {
-      navigate("/admin/dashboard"); // 관리자일 경우 관리자 대시보드로 이동
-    } else {
-      navigate("/reviews"); // 일반 유저는 리뷰 작성 페이지로 이동
-    }
-  };
+  // ✅ 로그인 페이지 들어올 때 자동으로 모달 열기
+  useEffect(() => {
+    if (!isAuthed) setOpen(true)
+  }, [isAuthed])
 
   if (open) {
     return (
       <AuthModal
         open={open}
         onClose={() => setOpen(false)}
-        onAuthed={handleLoginSuccess} // ✅ 로그인 성공 시 호출
+        onAuthed={onAuthed}
+        defaultMode={mode === "register" ? "register" : "login"} // ✅ 회원가입으로 바로 진입
       />
-    );
+    )
   }
 
   return (
     <section className='container-sm admin-card'>
       <header className='admin-head'>
-        <h1 className='title'>관리자 인증</h1>
+        <h1 className='title'>
+          {requiredRole === "admin" ? "관리자 인증" : "로그인"}
+        </h1>
         <p>버튼 → 모달에서 로그인/회원가입 → 토큰 저장 → /me 호출</p>
       </header>
 
       {!isAuthed ? (
         <div className="auth-row">
-          {/* 로그인 전 */}
-          <button
-            onClick={() => setOpen(true)}
-            className="btn btn-primary">
+          <button onClick={() => setOpen(true)} className="btn btn-primary">
             로그인 / 회원가입
           </button>
         </div>
       ) : (
         <div className="auth-row">
-          {/* 로그인 후 */}
           <span>안녕하세요 <b>{user?.displayName || user?.email}</b></span>
-          <span
-            className={`badge ${hasRequiredRole ? 'badge-ok' : 'badge-warn'} `}>
-            {hasRequiredRole ? 'admin' : `권한없음 : ${requiredRole} 필요`}
+          <span className={`badge ${hasRequiredRole ? 'badge-ok' : 'badge-warn'}`}>
+            {hasRequiredRole ? requiredRole : `권한없음: ${requiredRole} 필요`}
           </span>
-
           <div className="auth-actions">
             {hasRequiredRole && (
               <button className="btn" onClick={onFetchMe}>/me 호출</button>
@@ -71,21 +65,19 @@ const AuthPanel = ({
         </div>
       )}
 
-      {/* 권한 없음 경고 */}
-      {!hasRequiredRole && (
+      {isAuthed && !hasRequiredRole && (
         <div className="alert alert-warn">
           현재 계정에는 관리자 권한이 없습니다. 관리자 승인이 필요합니다.
         </div>
       )}
 
-      {/* 사용자 정보 예시 */}
       {me && (
         <pre className="code">
           {JSON.stringify(me, null, 2)}
         </pre>
       )}
     </section>
-  );
+  )
 }
 
-export default AuthPanel;
+export default AuthPanel
